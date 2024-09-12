@@ -1,25 +1,26 @@
-# Use Python 3.10 as a parent image
+# Use the official Python image from Docker Hub
 FROM python:3.10-slim
+
+# Install system dependencies required for Pygame
+RUN apt-get update && \
+    apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libsmpeg-dev libportmidi-dev libavformat-dev libswscale-dev libjpeg-dev libtiff-dev libpng-dev && \
+    apt-get clean
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies required by pygame
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Copy your requirements file into the container
+COPY requirements.txt .
 
-# Install Python packages directly
-RUN pip install --no-cache-dir pygame
+# Install the Python dependencies
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-# Copy the rest of the application code into the container
+# Copy the rest of your app's code
 COPY . .
 
-# Make port 5555 available to the world outside this container
+# Expose the port that Flask will use
 EXPOSE 5555
 
-# Define environment variable (if needed for your server)
-ENV PYTHONUNBUFFERED=1
-
-# Run the application (assuming your script is named server.py)
+# Start the Flask app
 CMD ["python", "server.py"]
