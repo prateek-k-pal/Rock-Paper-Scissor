@@ -6,7 +6,7 @@ app = Flask(__name__)
 games = {}
 id_count = 0
 
-@app.route("/get_game/<int:game_id>", method=["GET"])
+@app.route("/get_game/<int:game_id>", methods=["GET"])
 def get_game(game_id):
     game = games.get(game_id)
     if game:
@@ -14,7 +14,7 @@ def get_game(game_id):
     else:
         return "Game not found", 404
     
-@app.route("/create_game", method=["POST"])
+@app.route("/create_game", methods=["POST"])
 def create_game():
     global id_count
     game_id = id_count // 2
@@ -23,7 +23,7 @@ def create_game():
     
     return jsonify({"game_id": game_id, "player_id": 0})
 
-@app.route("/join_game/<int:game_id>", method="POST")
+@app.route("/join_game/<int:game_id>", methods="POST")
 def join_game(game_id):
     game = games.get(game_id)
     if game and not game.ready:
@@ -32,7 +32,7 @@ def join_game(game_id):
     else:
         return "Game full or not found", 400
     
-@app.route("/play/<int:game_id>/<int:player_id>", method=["POST"])
+@app.route("/play/<int:game_id>/<int:player_id>", methods=["POST"])
 def play_move(game_id, player_id):
     game = games.get(game_id)
     if game:
@@ -43,7 +43,7 @@ def play_move(game_id, player_id):
     else:
         return "Game not found", 404
     
-@app.route("/reset_game/<int:game_id>", method=["POST"])
+@app.route("/reset_game/<int:game_id>", methods=["POST"])
 def reset_game(game_id):
     game = games.get(game_id)
     if game:
