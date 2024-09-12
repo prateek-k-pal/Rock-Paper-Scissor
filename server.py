@@ -23,7 +23,7 @@ def create_game():
     
     return jsonify({"game_id": game_id, "player_id": 0})
 
-@app.route("/join_game/<int:game_id>", methods="POST")
+@app.route("/join_game/<int:game_id>", methods=["POST"])
 def join_game(game_id):
     game = games.get(game_id)
     if game and not game.ready:
