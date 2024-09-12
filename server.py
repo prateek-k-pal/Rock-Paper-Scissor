@@ -1,77 +1,56 @@
-import socket
-import _thread
-import pickle
+from flask import Flask, request, jsonify
 from game import Game
 
-server = ""
-port = 5555
+app = Flask(__name__)
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-try:
-    s.bind((server, port))
-except socket.error as e:
-    str(e)
-    
-s.listen(2)
-print("Waiting for a connection, Server Started")
-
-connected = set()
 games = {}
-idCount = 0
+id_count = 0
 
-def threaded_client(conn, p, gameId):
-    global idCount
-    conn.send(str.encode(str(p)))
-    
-    reply = ""
-    while True:
-        try:
-            data = conn.recv(4096).decode()
-            
-            if gameId in games:
-                game = games[gameId]
-                
-                if not data:
-                    break
-                else:
-                    if data == "reset":
-                        game.resetWent()
-                    elif data != "get":
-                        game.play(p, data)
-                    
-                    reply = game
-                    conn.sendall(pickle.dumps(reply))
-            else:
-                break
-            
-        except:
-            break
-        
-    print("Lost Connection")
-    
-    try:
-        del games[gameId]
-        print("Closing game:", gameId)
-    except:
-        pass
-    
-    idCount -= 1
-    conn.close()
-
-while True:
-    conn, addr = s.accept()
-    print("Connected to:", addr)
-    
-    idCount += 1
-    p = 0
-    gameId = (idCount - 1)//2
-    
-    if idCount % 2 == 1:
-        games[gameId] = Game(gameId)
-        print("Creating a new game...")
+@app.route("/get_game/<int:game_id>", method=["GET"])
+def get_game(game_id):
+    game = games.get(game_id)
+    if game:
+        return jsonify(game.__dict__)
     else:
-        games[gameId].ready = True
-        p = 1
+        return "Game not found", 404
     
-    _thread.start_new_thread(threaded_client, (conn, p, gameId))
+@app.route("/create_game", method=["POST"])
+def create_game():
+    global id_count
+    game_id = id_count // 2
+    games[game_id] = Game(game_id)
+    id_count += 1
+    
+    return jsonify({"game_id": game_id, "player_id": 0})
+
+@app.route("/join_game/<int:game_id>", method="POST")
+def join_game(game_id):
+    game = games.get(game_id)
+    if game and not game.ready:
+        game.ready = True
+        return jsonify({"player_id": 1})
+    else:
+        return "Game full or not found", 400
+    
+@app.route("/play/<int:game_id>/<int:player_id>", method=["POST"])
+def play_move(game_id, player_id):
+    game = games.get(game_id)
+    if game:
+        data = request.json
+        move = data.get("move")
+        game.play(player_id, move)
+        return jsonify(game.__dict__)
+    else:
+        return "Game not found", 404
+    
+@app.route("/reset_game/<int:game_id>", method=["POST"])
+def reset_game(game_id):
+    game = games.get(game_id)
+    if game:
+        game.resetWent()
+        return jsonify(game.__dict__)
+    else:
+        return "Game Not Found", 404
+    
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=5555)
