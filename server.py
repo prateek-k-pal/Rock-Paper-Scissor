@@ -96,6 +96,38 @@ def reset_game(game_id):
     else:
         return "Game Not Found", 404
 
+@app.route("/waiting/<int:game_id>/<int:player_id>", methods=["POST"])
+def waiting(game_id, player_id):
+    if len(id_count) != 0:
+        for id in id_count:
+            if id_count[id] == False:
+                id_count[id] = True
+                
+                id_count[game_id * 2 + player_id] = False
+                games.pop(game_id)
+                
+                game_id = id // 2
+                player_id = id % 2
+                game = games[game_id]
+                
+                if player_id % 2 == 0:
+                    game.p1present = True
+                else:
+                    game.p2present = True
+                    
+                if game.p1present and game.p2present:
+                    game.ready = True
+                    
+                ret = {"player_id": player_id} | game.__dict__
+                
+                return flask.jsonify(ret)
+        
+    game = games[game_id]
+    ret = {"player_id": player_id} | game.__dict__
+                
+    return flask.jsonify(ret)
+
+
 @app.route("/disconnect/<int:game_id>/<int:player_id>", methods=["POST"])
 def disconnect(game_id, player_id):
     global id_count
